@@ -15,23 +15,25 @@ public interface FhirInterface {
     String AUTHORIZATION = "Authorization";
 
     //SEARCH
+
     /**
      * Search for most recent instances of given resource.
      */
     @GET
-    Call<Bundle> getResources(@Url String endpoint);
+    Call<Bundle> search(@Url String endpoint);
 
     @GET
-    Call<Bundle> getResources(@Url String endpoint,
-                                  @QueryMap Map<String, String> searchPrameters);
+    Call<Bundle> search(@Url String endpoint,
+                        @QueryMap Map<String, String> searchPrameters);
 
     //READ
+
     /**
      * The read interaction accesses the current contents of a resource.
      * The interaction is performed by an {@code HTTP GET} command as shown:
-     *  <p>
+     * <p>
      * {@code GET [base]/[type]/[id] {?_format=[mime-type]} }
-     *  <p>
+     * <p>
      * This returns a single instance with the content specified for the resource type. This url may be accessed by a
      * browser. The possible values for the Logical Id ("id") itself are described in the id type. The returned resource
      * SHALL have an id element with a value that is the [id]. Servers SHOULD return an ETag header with the versionId
@@ -54,15 +56,14 @@ public interface FhirInterface {
      * SHOULD define a Resource.meta.tag with the SUBSETTED as a Simple Tag to explicitly mark such resources.
      *
      * @param resourceType
-     * @param answer_id
+     * @param id
      * @param bearer
      */
     @GET("{type}/{id}")
     Call<BaseResource> read(@Path("type") String resourceType,
-                            @Path("id") String answer_id,
+                            @Path("id") String id,
                             @Header(AUTHORIZATION) String bearer);
 
-    //VREAD
     /**
      * The vread interaction preforms a version specific read of the resource. The interaction is performed by an
      * {@code HTTP GET} command as shown:
@@ -86,17 +87,16 @@ public interface FhirInterface {
      * for the underlying resource type or instance.
      *
      * @param resourceType
-     * @param answer_id
+     * @param id
      * @param version
      * @param bearer
      */
     @GET("{type}/{id}/_history/{vid}")
     Call<BaseResource> vRead(@Path("type") String resourceType,
-                             @Path("id") String answer_id,
+                             @Path("id") String id,
                              @Path("vid") String version,
                              @Header(AUTHORIZATION) String bearer);
 
-    //UPDATE
     /**
      * The update interaction creates a new current version for an existing resource or creates an initial version if
      * no resource already exists for the given id. The update interaction is performed by an HTTP PUT command as shown:
@@ -149,12 +149,15 @@ public interface FhirInterface {
      * Common HTTP Status codes returned on FHIR-related errors (in addition to normal {@code HTTP} errors related to
      * security, header and content type negotiation issues):
      * <ul>
-     * <li> {@code 400 Bad Request} - resource could not be parsed or failed basic FHIR validation rules (or multiple matches were found for conditional criteria)
+     * <li> {@code 400 Bad Request} - resource could not be parsed or failed basic FHIR validation rules (or multiple
+     * matches were found for conditional criteria)
      * <li> {@code 401 Not Authorized} - authorization is required for the interaction that was attempted
      * <li> {@code 404 Not Found} - resource type not supported, or not a FHIR end-point
-     * <li> {@code 405 Method Not allowed} - the resource did not exist prior to the update, and the server does not allow client defined ids
+     * <li> {@code 405 Method Not allowed} - the resource did not exist prior to the update, and the server does not
+     * allow client defined ids
      * <li> {@code 409/412 version conflict management} - see below
-     * <li> {@code 422 Unprocessable Entity} - the proposed resource violated applicable FHIR profiles or server business rules
+     * <li> {@code 422 Unprocessable Entity} - the proposed resource violated applicable FHIR profiles or server
+     * business rules
      * </ul>
      * Any of these errors SHOULD be accompanied by an OperationOutcome resource providing additional detail concerning
      * the issue.
@@ -163,12 +166,13 @@ public interface FhirInterface {
      * Submitted data and Retrieved data page.
      *
      * @param resourceType
-     * @param answer_id
+     * @param id
      * @param bearer
      */
     @PUT("{type}/{id}")
     Call<BaseResource> update(@Path("type") String resourceType,
-                              @Path("id") String answer_id,
+                              @Path("id") String id,
+                              @Body BaseResource body,
                               @Header(AUTHORIZATION) String bearer);
 
     /**
@@ -201,19 +205,102 @@ public interface FhirInterface {
      * @return
      */
     @PUT("{type}")
-    Call<BaseResource> update(@Path("type") String resourceType,
+    Call<BaseResource> conditionalUpdate(@Path("type") String resourceType,
                               @QueryMap Map<String, String> searchPrameters,
+                              @Body BaseResource body,
                               @Header(AUTHORIZATION) String bearer);
+
+    /**
+     * As an alternative to updating an entire resource, clients can perform a patch operation. This can be useful when
+     * a client is seeking to minimise its bandwidth utilization, or in scenarios where a client has only partial access
+     * or support for a resource. The patch interaction is performed by an HTTP PATCH command as shown:
+     * <p>
+     * {@code PATCH [base]/[type]/[id] {?_format=[mime-type]}}
+     * The body of a PATCH operation SHALL be either:
+     * <ul>
+     * <li>a JSON Patch  document with a content type of {@code application/json-patch+json}</li>
+     * <li>an XML Patch  document with a content type of {@code application/xml-patch+xml}</li>
+     * <li>a FHIRPath Patch parameters resource with FHIR Content Type</li>
+     * </ul>
+     * In either case, the server SHALL process its own copy of the resource in the format indicated, applying the
+     * operations specified in the document, following the relevant PATCH specification. When the operations have all
+     * been processed, the server processes the resulting document as an Update operation; all the version and error
+     * handling etc. applies as specified, as does the Prefer Header.
+     * <p>
+     * Processing PATCH operations may be very version sensitive. For this reason, servers SHALL support
+     * conditional PATCH, which works exactly the same as specified for update in Concurrency Management. Clients SHOULD
+     * always consider using version specific PATCH operations so that inappropriate actions are not executed. In
+     * addition, servers SHALL support Conditional PATCH, which works exactly as described for Conditional Update.
+     * <p>
+     * The server SHALL ensure that the narrative in a resource is not clinically unsafe after the PATCH operation is
+     * performed. Exactly how this is defined and can be achieved depends on the context, and how narrative is being
+     * maintained, but servers may wish to consider:
+     * <ul>
+     * <li>If the existing narrative has a status != generated, the server could reject the PATCH operation</li>
+     * <li>The server could regenerate the narrative once the operation has been applied to the data</li>
+     * <li>In some limited circumstances, an XML PATCH operation could update the narrative</li>
+     * <li>The server could delete the narrative, on the basis that some later process will be able to populate it correctly</li>
+     * </ul>
+     * Processing XML Patch documents is tricky because of namespace handling. Servers SHALL handle namespaces
+     * correctly, but note that FHIR resources only contain two XML namespaces, for FHIR (http://hl7.org/fhir) and XHTML
+     * (http://www.w3.org/1999/xhtml).
+     * <p>
+     * Patch operations may be performed as part of Batch or Transaction Operations using the FHIRPath Patch format.
+     */
+    @PATCH("{type}/{id}")
+    Call<BaseResource> patch(@Path("type") String resourceType,
+                              @Path("id") String id,
+                              @Body BaseResource body,
+                              @Header(AUTHORIZATION) String bearer);
+
+    /**
+     * The delete interaction removes an existing resource. The interaction is performed by an {@code HTTP DELETE}
+     * command as shown:
+     * <p>
+     * {@code DELETE [base]/[type]/[id]}
+     * <p>
+     * A delete interaction means that subsequent non-version specific reads of a resource return a {@code 410 HTTP}
+     * status code and that the resource is no longer found through search interactions. Upon successful deletion, or
+     * if the resource does not exist at all, the server should return either a 200 OK if the response contains a
+     * payload, or a 204 No Content with no response payload.
+     * <p>
+     * Whether to support delete at all, or for a particular resource type or a particular instance is at the
+     * discretion of the server based on the business rules that apply in its context. If the server refuses to delete
+     * resources of that type as a blanket policy, then it should return the 405 Method not allowed status code. If the
+     * server refuses to delete a resource because of reasons specific to that resource, such as referential integrity,
+     * it should return the {@code 409 Conflict} status code. Performing this interaction on a resource that is already
+     * deleted has no effect, and the server should return either a 200 OK if the response contains a payload, or a
+     * {@code 204 No Content} with no response payload. Resources that have been deleted may be "brought back to life"
+     * by a subsequent update interaction using an {@code HTTP PUT}.
+     * <p>
+     * Many resources have a status element that overlaps with the idea of deletion. Each resource type defines what
+     * the semantics of the deletion interactions are. If no documentation is provided, the deletion interaction should
+     * be understood as deleting the record of the resource, with nothing about the state of the real-world
+     * corresponding resource implied.
+     * For servers that maintain a version history, the delete interaction does not remove a resource's version history.
+     * From a version history respect, deleting a resource is the equivalent of creating a special kind of history
+     * entry that has no content and is marked as deleted. Note that there is no support for deleting past versions -
+     * see notes on the history interaction.
+     * <p>
+     * Since deleted resources may be brought back to life, servers MAY include an ETag on the delete response to allow
+     * version contention management when a resource is brought back to life.
+     *
+     * @param id
+     */
+    @DELETE("{type}/{id}")
+    Call<BaseResource> delete(@Path("type") String resourceType,
+                             @Path("id") String id,
+                             @Header(AUTHORIZATION) String bearer);
+
+    /**
+     *
+     */
+
 
     //HISTORY
     /**
      * Retrieve the update history across the Patient resource type, or against a specific instance of this resource
      * type if an ID is specified.
-     */
-
-    //DELETE
-    /**
-     * Delete an individual instance of the resource.
      */
 
     //CREATE
