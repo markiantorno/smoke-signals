@@ -23,6 +23,7 @@ import retrofit2.Callback;
 import retrofit2.Response;
 import retrofit2.Retrofit;
 import retrofit2.converter.jackson.JacksonConverterFactory;
+import smokesignals.utils.FhirQuery;
 import smokesignals.utils.RestServiceMockUtils;
 import smokesignals.utils.fhirconverter.FhirConverterFactory;
 
@@ -33,7 +34,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * Created by mark on 2017-11-27.
  */
-public class FhirInterfaceTest {
+public class FhirInterfaceTest extends DSTU2BaseTest {
 
     private final String DUMMY_TOKEN = "757fb9c4-41ef-49f3-99f5-7d16285a5de0";
     private final String DUMMY_TOKEN_BEARER = "Bearer " + DUMMY_TOKEN;
@@ -43,65 +44,29 @@ public class FhirInterfaceTest {
     private String mObservationBundleResponseJson;
     private Bundle mObservationResponseResponse;
 
-    private MockWebServer mServer;
-    private OkHttpClient mOkHttpClient;
-    private Retrofit mRetrofit;
-    private FhirInterface mFhirInterface;
-
-    private final String FHIRTEST_URL = "http://fhirtest.uhn.ca/baseDstu3/";
-    private boolean mLiveTest = true;//false;
-
     @Before
     public void setUp() throws Exception {
-
-        FhirContext ctxDstu2 = FhirContext.forDstu2();
-
-        ObjectMapper mapper = new ObjectMapper();
-        IParser jsonParser = ctxDstu2.newJsonParser();
+        testWithLiveServer(false);
+        super.setUp();
 
         mObservationBundleResponseJson = RestServiceMockUtils.getStringFromFile(this.getClass().getClassLoader(), "observation_bundle.json");
-        mObservationResponseResponse = (Bundle) jsonParser.parseResource(mObservationBundleResponseJson);
+        mObservationResponseResponse = (Bundle) mFhirJsonParser.parseResource(mObservationBundleResponseJson);
 
-        mServer = new MockWebServer();
-        mServer.start();
+    }
 
-        final Dispatcher dispatcher = new Dispatcher() {
-
+    @Override
+    public Dispatcher getDispatcher() {
+        return new Dispatcher() {
             @Override
             public MockResponse dispatch(RecordedRequest request) throws InterruptedException {
                 String endpoint = request.getPath().substring(1);
                 if (endpoint.equals(ENDPOINT_OBSERVATION)) {
-//                        Assert.assertTrue(request.getBody().readUtf8().equals(mChangePasswordRequestJson.replaceAll("\\s+| ", "")));
-//                        Assert.assertTrue(request.getHeader(RestServiceMockUtils.HEADER_AUTHORIZATION).equals(DUMMY_TOKEN_BEARER));
                     return new MockResponse().setBody(mObservationBundleResponseJson).setResponseCode(HttpURLConnection.HTTP_OK);
                 } else {
                     return new MockResponse().setResponseCode(HttpURLConnection.HTTP_FORBIDDEN);
                 }
             }
         };
-
-        mServer.setDispatcher(dispatcher);
-
-        HttpUrl baseUrl = mServer.url("");
-
-        mOkHttpClient = new OkHttpClient.Builder()
-                .readTimeout(RestServiceMockUtils.CONNECTION_TIMEOUT_SHORT, TimeUnit.SECONDS)
-                .connectTimeout(RestServiceMockUtils.CONNECTION_TIMEOUT_SHORT, TimeUnit.SECONDS)
-                .build();
-
-        mRetrofit = new Retrofit.Builder()
-                .baseUrl(mLiveTest ? FHIRTEST_URL : baseUrl.toString())
-                .addConverterFactory(FhirConverterFactory.create(ctxDstu2))
-                .client(mOkHttpClient)
-                .build();
-
-        mFhirInterface = mRetrofit.create(FhirInterface.class);
-
-    }
-
-    @After
-    public void tearDown() throws Exception {
-        mServer.shutdown();
     }
 
     @Test
