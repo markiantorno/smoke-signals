@@ -1,7 +1,9 @@
 package smokesignals.interfaces;
 
 import ca.uhn.fhir.context.FhirContext;
+import ca.uhn.fhir.model.dstu2.resource.BaseResource;
 import ca.uhn.fhir.model.dstu2.resource.Bundle;
+import ca.uhn.fhir.model.dstu2.resource.Observation;
 import ca.uhn.fhir.parser.IParser;
 import ca.uhn.fhir.parser.JsonParser;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -46,6 +48,9 @@ public class FhirInterfaceTest {
     private Retrofit mRetrofit;
     private FhirInterface mFhirInterface;
 
+    private final String FHIRTEST_URL = "http://fhirtest.uhn.ca/baseDstu3/";
+    private boolean mLiveTest = true;//false;
+
     @Before
     public void setUp() throws Exception {
 
@@ -85,7 +90,7 @@ public class FhirInterfaceTest {
                 .build();
 
         mRetrofit = new Retrofit.Builder()
-                .baseUrl(baseUrl.toString())
+                .baseUrl(mLiveTest ? FHIRTEST_URL : baseUrl.toString())
                 .addConverterFactory(FhirConverterFactory.create(ctxDstu2))
                 .client(mOkHttpClient)
                 .build();
@@ -119,6 +124,30 @@ public class FhirInterfaceTest {
             }
         });
 
-        Assert.assertTrue(latch.await(1000, TimeUnit.SECONDS));
+        Assert.assertTrue(latch.await(RestServiceMockUtils.CONNECTION_TIMEOUT_SHORT, TimeUnit.SECONDS));
+    }
+
+    @Test
+    public void testObservationObservationRead() throws InterruptedException {
+
+        final CountDownLatch latch = new CountDownLatch(1);
+
+        Call<BaseResource> call = mFhirInterface.read(Observation.class.getSimpleName(), "27099", null);
+
+        call.enqueue(new Callback<BaseResource>() {
+            public void onResponse(Call<BaseResource> call, Response<BaseResource> response) {
+                if (response.isSuccessful()) {
+                    latch.countDown();
+                } else {
+                    TestCase.fail("loginTest !isSuccessful : " + response.message());
+                }
+            }
+
+            public void onFailure(Call<BaseResource> call, Throwable throwable) {
+                TestCase.fail("loginTest onFailure : " + throwable.getMessage());
+            }
+        });
+
+        Assert.assertTrue(latch.await(RestServiceMockUtils.CONNECTION_TIMEOUT_SHORT, TimeUnit.SECONDS));
     }
 }
