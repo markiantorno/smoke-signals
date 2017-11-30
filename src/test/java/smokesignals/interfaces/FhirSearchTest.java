@@ -1,8 +1,7 @@
 package smokesignals.interfaces;
 
-import ca.uhn.fhir.model.dstu2.resource.BaseResource;
 import ca.uhn.fhir.model.dstu2.resource.Bundle;
-import ca.uhn.fhir.model.dstu2.resource.Observation;
+import ca.uhn.fhir.model.dstu2.valueset.HTTPVerbEnum;
 import junit.framework.TestCase;
 import okhttp3.mockwebserver.Dispatcher;
 import okhttp3.mockwebserver.MockResponse;
@@ -10,10 +9,11 @@ import okhttp3.mockwebserver.RecordedRequest;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.unitils.reflectionassert.ReflectionAssert;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
-import smokesignals.utils.RestServiceMockUtils;
+import smokesignals.utils.FhirQuery;
 
 import java.net.HttpURLConnection;
 import java.util.concurrent.CountDownLatch;
@@ -29,16 +29,16 @@ public class FhirSearchTest extends DSTU2BaseTest {
 
     private final String ENDPOINT_OBSERVATION = "Observation";
 
-    private String mObservationBundleResponseJson;
-    private Bundle mObservationResponseResponse;
+    private String mObservationBaseSearchResponseJson;
+    private Bundle mObservationBaseSearchResponse;
 
     @Before
     public void setUp() throws Exception {
-        testWithLiveServer(false);
+        testWithLiveServer(true);
         super.setUp();
 
-        mObservationBundleResponseJson = RestServiceMockUtils.getStringFromFile(this.getClass().getClassLoader(), "observation_bundle.json");
-        mObservationResponseResponse = (Bundle) mFhirJsonParser.parseResource(mObservationBundleResponseJson);
+        mObservationBaseSearchResponseJson = getJsonString("search/observation_base_search_result.json");
+        mObservationBaseSearchResponse = (Bundle) mFhirJsonParser.parseResource(mObservationBaseSearchResponseJson);
 
     }
 
@@ -48,10 +48,15 @@ public class FhirSearchTest extends DSTU2BaseTest {
             @Override
             public MockResponse dispatch(RecordedRequest request) throws InterruptedException {
                 String endpoint = request.getPath().substring(1);
-                if (endpoint.equals(ENDPOINT_OBSERVATION)) {
-                    return new MockResponse().setBody(mObservationBundleResponseJson).setResponseCode(HttpURLConnection.HTTP_OK);
-                } else {
-                    return new MockResponse().setResponseCode(HttpURLConnection.HTTP_FORBIDDEN);
+                String methodHTTP = request.getMethod();
+
+                switch (endpoint) {
+                    case ENDPOINT_OBSERVATION:
+                        if (methodHTTP.equals(HTTPVerbEnum.GET.name())) {
+                            return new MockResponse().setBody(mObservationBaseSearchResponseJson).setResponseCode(HttpURLConnection.HTTP_OK);
+                        }
+                    default:
+                        return new MockResponse().setResponseCode(HttpURLConnection.HTTP_FORBIDDEN);
                 }
             }
         };
@@ -62,10 +67,12 @@ public class FhirSearchTest extends DSTU2BaseTest {
 
         final CountDownLatch latch = new CountDownLatch(1);
 
-        Call<Bundle> call = mFhirInterface.getResources(ENDPOINT_OBSERVATION);
+        Call<Bundle> call = mFhirInterface.search(ENDPOINT_OBSERVATION, new FhirQuery.FhirQueryBuilder().build());
         call.enqueue(new Callback<Bundle>() {
             public void onResponse(Call<Bundle> call, Response<Bundle> response) {
                 if (response.isSuccessful()) {
+                    ReflectionAssert.assertReflectionEquals(response.body().getEntry(),
+                            mObservationBaseSearchResponse.getEntry());
                     latch.countDown();
                 } else {
                     TestCase.fail("loginTest !isSuccessful : " + response.message());
@@ -77,7 +84,6 @@ public class FhirSearchTest extends DSTU2BaseTest {
             }
         });
 
-        Assert.assertTrue(latch.await(RestServiceMockUtils.CONNECTION_TIMEOUT_SHORT, TimeUnit.SECONDS));
+        Assert.assertTrue(latch.await(CONNECTION_TIMEOUT_SHORT, TimeUnit.SECONDS));
     }
-
 }

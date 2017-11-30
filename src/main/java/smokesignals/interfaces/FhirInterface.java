@@ -5,6 +5,8 @@ import ca.uhn.fhir.model.dstu2.resource.Bundle;
 import retrofit2.Call;
 import retrofit2.http.*;
 
+import ca.uhn.fhir.model.dstu2.resource.*;
+
 import java.util.Map;
 
 /**
@@ -14,33 +16,68 @@ public interface FhirInterface {
 
     String AUTHORIZATION = "Authorization";
 
-    //SEARCH
-
     /**
-     * Search for most recent instances of given resource.
+     * This interaction searches a set of resources based on some filter criteria. The interaction can be performed by
+     * several different HTTP commands.
+     * <p>
+     * {@code GET [base]/[type]{?[parameters]{&_format=[mime-type]}}}
+     * This searches all resources of a particular type using the criteria represented in the parameters.
+     * <p>
+     * Because of the way that some user agents and proxies treat {@code GET} and {@code POST} requests, in addition
+     * to the get based search method above, servers that support search SHALL also support a POST based search:
+     * <p>
+     * {@code POST [base]/[type]/_search{?[parameters]{&_format=[mime-type]}}}
+     * <p>
+     * This has exactly the same semantics as the equivalent {@code GET} command. All these search interactions take a series
+     * of parameters that are a series of name=value pairs encoded in the URL (or as an
+     * application/x-www-form-urlencoded submission for a POST). (See W3C HTML forms ).
+     * <p>
+     * Note: application/x-www-form-urlencoded is supported for POST so that invoking a search by {@code GET} and
+     * {@code POST} can be done from HTML forms in a browser (though considerable active content might be required in
+     * the browser), although this is not the main usage.
+     * <p>
+     * Searches are processed as specified for the Search handling mechanism.
+     * <p>
+     * If the search succeeds, the server SHALL return a {@code 200 OK} HTTP status code and the return content SHALL
+     * be a {@link Bundle} with type = searchset containing the results of the search as a collection of zero or more resources
+     * in a defined order. The result collection can be long, so servers may use paging. If they do, they SHALL use the
+     * method described below (adapted from RFC 5005 (Feed Paging and Archiving ) for breaking the collection into pages
+     * if appropriate. The server MAY also return an {@link OperationOutcome} resource within the searchset {@link Bundle} entries that
+     * contains additional information about the search; if one is sent it SHALL NOT include any issues with a fatal
+     * or error severity, and it SHALL be marked with a Bundle.entry.search.mode of outcome.
+     * <p>
+     * If the search fails (cannot be executed, not that there is no matches), the return value is a status code 4xx
+     * or 5xx with an {@link OperationOutcome}.
+     * <p>
+     * Common HTTP Status codes returned on FHIR-related errors (in addition to normal HTTP errors related to security,
+     * header and content type negotiation issues):
+     * <ul>
+     * <li>400 Bad Request - search could not be processed or failed basic FHIR validation rules</li>
+     * <li>401 Not Authorized - authorization is required for the interaction that was attempted</li>
+     * <li>404 Not Found - resource type not supported, or not a FHIR end-point</li>
+     * </ul>
+     *
+     * @param endpoint
+     * @param searchPrameters
+     * @return
      */
-    @GET
-    Call<Bundle> search(@Url String endpoint);
-
     @GET
     Call<Bundle> search(@Url String endpoint,
                         @QueryMap Map<String, String> searchPrameters);
-
-    //READ
 
     /**
      * The read interaction accesses the current contents of a resource.
      * The interaction is performed by an {@code HTTP GET} command as shown:
      * <p>
-     * {@code GET [base]/[type]/[id] {?_format=[mime-type]} }
+     * {@code {@code GET} [base]/[type]/[id] {?_format=[mime-type]} }
      * <p>
      * This returns a single instance with the content specified for the resource type. This url may be accessed by a
      * browser. The possible values for the Logical Id ("id") itself are described in the id type. The returned resource
      * SHALL have an id element with a value that is the [id]. Servers SHOULD return an ETag header with the versionId
      * of the resource (if versioning is supported) and a Last-Modified header.
      * <p>
-     * Note: Unknown resources and deleted resources are treated differently on a read: a GET for a deleted resource`
-     * returns a {@code 410} status code, whereas a GET for an unknown resource returns {@code 404}. Systems that do not
+     * Note: Unknown resources and deleted resources are treated differently on a read: a {@code GET} for a deleted resource
+     * returns a {@code 410} status code, whereas a {@code GET} for an unknown resource returns {@code 404}. Systems that do not
      * track deleted records will treat deleted records as an unknown resource. Since deleted resources may be brought
      * back to life, servers MAY include an ETag on the error response when reading a deleted record to allow version
      * contention management when a resource is brought back to life.
@@ -105,7 +142,7 @@ public interface FhirInterface {
      * <p>
      * The request body SHALL be a Resource with an id element that has an identical value to the [id] in the URL. If
      * no id element is provided, or the value is wrong, the server SHALL respond with an {@code HTTP 400} error code, and
-     * SHOULD provide an OperationOutcome identifying the issue. If the request body includes a meta, the server SHALL
+     * SHOULD provide an {@link OperationOutcome} identifying the issue. If the request body includes a meta, the server SHALL
      * ignore the provided versionId and lastUpdated values. If the server supports versions, it SHALL populate the
      * meta.versionId and meta.lastUpdated with the new correct values. Servers are allowed to review and alter the
      * other metadata values, but SHOULD refrain from doing so (see metadata description for further information). Note
@@ -159,7 +196,7 @@ public interface FhirInterface {
      * <li> {@code 422 Unprocessable Entity} - the proposed resource violated applicable FHIR profiles or server
      * business rules
      * </ul>
-     * Any of these errors SHOULD be accompanied by an OperationOutcome resource providing additional detail concerning
+     * Any of these errors SHOULD be accompanied by an {@link OperationOutcome} resource providing additional detail concerning
      * the issue.
      * <p>
      * For additional information on how systems may behave when processing updates, refer to the Variations between
@@ -197,7 +234,7 @@ public interface FhirInterface {
      * <p>
      * Note that transactions and conditional create/update/delete are complex interactions and it is not expected that
      * every server will implement them. Servers that don't support the conditional update should return an
-     * {@code HTTP 400} error and an OperationOutcome.
+     * {@code HTTP 400} error and an {@link OperationOutcome}.
      *
      * @param resourceType
      * @param searchPrameters
@@ -206,9 +243,9 @@ public interface FhirInterface {
      */
     @PUT("{type}")
     Call<BaseResource> conditionalUpdate(@Path("type") String resourceType,
-                              @QueryMap Map<String, String> searchPrameters,
-                              @Body BaseResource body,
-                              @Header(AUTHORIZATION) String bearer);
+                                         @QueryMap Map<String, String> searchPrameters,
+                                         @Body BaseResource body,
+                                         @Header(AUTHORIZATION) String bearer);
 
     /**
      * As an alternative to updating an entire resource, clients can perform a patch operation. This can be useful when
@@ -249,9 +286,9 @@ public interface FhirInterface {
      */
     @PATCH("{type}/{id}")
     Call<BaseResource> patch(@Path("type") String resourceType,
-                              @Path("id") String id,
-                              @Body BaseResource body,
-                              @Header(AUTHORIZATION) String bearer);
+                             @Path("id") String id,
+                             @Body BaseResource body,
+                             @Header(AUTHORIZATION) String bearer);
 
     /**
      * The delete interaction removes an existing resource. The interaction is performed by an {@code HTTP DELETE}
@@ -289,31 +326,131 @@ public interface FhirInterface {
      */
     @DELETE("{type}/{id}")
     Call<BaseResource> delete(@Path("type") String resourceType,
-                             @Path("id") String id,
-                             @Header(AUTHORIZATION) String bearer);
+                              @Path("id") String id,
+                              @Header(AUTHORIZATION) String bearer);
 
     /**
-     *
+     * The conditional delete interaction allows a client to delete an existing resource based on some selection
+     * criteria, rather than by a specific logical id. To accomplish this, the client issues an HTTP DELETE as shown:
+     * <p>
+     * {@code DELETE [base]/[type]/?[search parameters]}
+     * <p>
+     * When the server processes this delete, it performs a search as specified using the standard search facilities
+     * for the resource type. The action it takes depends on how many matches are found:
+     * <ul>
+     * <li>No matches or One Match: The server performs an ordinary delete on the matching resource</li>
+     * <li>Multiple matches: Servers may choose to delete all the matching resources, or it may choose to return a
+     * {@code 412 Precondition Failed} error indicating the client's criteria were not selective enough. A server
+     * indicates whether it can delete multiple resources in its Capability Statement
+     * (.rest.resource.conditionalDelete). If there are multiple matches, either all must be deleted, or the server
+     * SHALL return an error</li>
+     * </ul>
+     * This variant can be used to allow a stateless client (such as an interface engine) to delete a resource on a
+     * server, without having to remember the logical ids that the server has assigned. For example, a client deleting
+     * a lab atomic result might delete the resource using
+     * {@code DELETE /Observation?identifier=http://my-lab-system|123.}
+     * <p>
+     * Note that transactions and conditional create/update/delete are complex interactions and it is not expected that
+     * every server will implement them. Servers that don't support the conditional delete should return an
+     * {@code HTTP 400} error and an {@link OperationOutcome}.
      */
-
-
-    //HISTORY
-    /**
-     * Retrieve the update history across the Patient resource type, or against a specific instance of this resource
-     * type if an ID is specified.
-     */
+    @DELETE("{type}")
+    Call<BaseResource> conditionalDelete(@Path("type") String resourceType,
+                                         @QueryMap Map<String, String> searchPrameters,
+                                         @Header(AUTHORIZATION) String bearer);
 
     //CREATE
-    /**
-     * Create an instance of the resource. Generally you do not need to specify an ID but you may force the server to
-     * use a specific ID by including one.
-     */
 
-    //VALIDATE
     /**
-     * Validate an instance of the resource to check whether it would be acceptable for creating/updating, without
-     * actually storing it on the server.
+     * The create interaction creates a new resource in a server-assigned location. If the client wishes to have control
+     * over the id of a newly submitted resource, it should use the update interaction instead. The create interaction
+     * is performed by an {@code HTTP POST} command as shown:
+     * <p>
+     * {@code POST [base]/[type] {?_format=[mime-type]}}
+     * <p>
+     * The request body SHALL be a FHIR Resource. The resource does not need to have an id element (this is one of the
+     * few cases where a resource exists without an id element). If an id is provided, the server SHALL ignore it. If
+     * the request body includes a meta, the server SHALL ignore the existing versionId and lastUpdated values. The
+     * server SHALL populate the id, meta.versionId and meta.lastUpdated with the new correct values. Servers are
+     * allowed to review and alter the other metadata values, but SHOULD refrain from doing so (see metadata
+     * description for further information).
+     * <p>
+     * A server SHOULD otherwise accept the resource as submitted when it accepts the create, and return the same
+     * content when it is subsequently read. However some systems may not be able to do this; see the note on
+     * transactional integrity for discussion.
+     * <p>
+     * The server returns a {@code 201 Created} HTTP status code, and SHALL also return a Location header which
+     * contains the new Logical Id and Version Id of the created resource version:
+     * <p>
+     * {@code Location: [base]/[type]/[id]/_history/[vid]}
+     * <p>
+     * where {@code [id]} and {@code [vid]} are the newly created id and version id for the resource version. Servers
+     * SHOULD return an ETag header with the versionId (if versioning is supported) and a Last-Modified header.
+     * <p>
+     * When the resource syntax or data is incorrect or invalid, and cannot be used to create a new resource, the server
+     * returns a {@code 400 Bad Request} HTTP status code. When the server rejects the content of the resource because
+     * of business rules, the server returns a {@code 422 Unprocessable Entity} error HTTP status code. In either case,
+     * the server SHOULD include a response body containing an {@link OperationOutcome} with detailed error messages
+     * describing the reason for the error.
+     * <p>
+     * Common HTTP Status codes returned on FHIR-related errors (in addition to normal HTTP errors related to security,
+     * header and content type negotiation issues):
+     * {@code 400 Bad Request} - resource could not be parsed or failed basic FHIR validation rules
+     * {@code 404 Not Found} - resource type not supported, or not a FHIR end-point
+     * {@code 422 Unprocessable Entity} - the proposed resource violated applicable FHIR profiles or server business
+     * rules. This should be accompanied by an {@link OperationOutcome} resource providing additional detail
+     * <p>
+     * Note: Servers MAY choose to preserve XML comments, instructions, and formatting or JSON whitespace when
+     * accepting creates, but are not required to do so. The impact of this on digital signatures may need to be
+     * considered.
+     * <p>
+     * For additional information on how systems may behave when processing updates, refer to the Variations between
+     * Submitted data and Retrieved data page.
      */
+    @POST("{type}")
+    Call<BaseResource> create(@Path("type") String resourceType,
+                              @Body BaseResource body,
+                              @Header(AUTHORIZATION) String bearer);
+
+    /**
+     * The conditional create interaction allows a client to create a new resource only if some equivalent resource
+     * does not already exist on the server. The client defines what equivalence means in this case by supplying a FHIR
+     * search query using an HL7 defined extension header "If-None-Exist" as shown:
+     * <p>
+     * {@code If-None-Exist: [search parameters]}
+     * <p>
+     * The parameter just contains the search parameters (what would be in the URL following the "?").
+     * <p>
+     * When the server processes this create, it performs a search as specified using its standard search facilities for
+     * the resource type. The action it takes depends on how many matches are found:
+     * <ul>
+     * <li>No matches: The server processes the create as above</li>
+     * <li>One Match: The server ignore the post and returns {@code 200 OK}</li>
+     * <li>Multiple matches: The server returns a 412 Precondition Failed error indicating the client's criteria
+     * were not selective enough</li>
+     * </ul>
+     * This variant can be used to avoid the risk of two clients creating duplicate resources for the same record.
+     * For example, a client posting a new lab result might specify
+     * {@code If-None-Exist: identifier=http://my-lab-system|123} to ensure it is does not create a duplicate record.
+     * <p>
+     * Note that transactions and conditional create/update/delete are complex interactions and it is not expected that
+     * every server will implement them. Servers that don't support the conditional create should return an
+     * {@code HTTP 412} error and an {@link OperationOutcome}.
+     *
+     * @param resourceType
+     * @param body
+     * @param searchPrameters
+     * @param bearer
+     * @return
+     */
+    @POST("{type}")
+    @Headers({
+            "If-None-Exist: {search_params}"
+    })
+    Call<BaseResource> conditionalCreate(@Path("type") String resourceType,
+                                         @Body BaseResource body,
+                                         @Path("search_params") Map<String, String> searchPrameters,
+                                         @Header(AUTHORIZATION) String bearer);
 
 }
 

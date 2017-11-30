@@ -31,6 +31,14 @@
             <scope>test</scope>
         </dependency>
 
+        <!-- http://www.unitils.org -->
+        <dependency>
+            <groupId>org.unitils</groupId>
+            <artifactId>unitils-core</artifactId>
+            <version>3.4.2</version>
+            <scope>test</scope>
+        </dependency>
+
         <!-- https://mvnrepository.com/artifact/com.squareup.okhttp3/mockwebserver -->
         <dependency>
             <groupId>com.squareup.okhttp3</groupId>

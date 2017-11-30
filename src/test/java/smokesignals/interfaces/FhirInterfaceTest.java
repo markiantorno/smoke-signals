@@ -74,7 +74,7 @@ public class FhirInterfaceTest extends DSTU2BaseTest {
 
         final CountDownLatch latch = new CountDownLatch(1);
 
-        Call<Bundle> call = mFhirInterface.search(ENDPOINT_OBSERVATION);
+        Call<Bundle> call = mFhirInterface.search(ENDPOINT_OBSERVATION, null);
         call.enqueue(new Callback<Bundle>() {
             public void onResponse(Call<Bundle> call, Response<Bundle> response) {
                 if (response.isSuccessful()) {
@@ -89,7 +89,7 @@ public class FhirInterfaceTest extends DSTU2BaseTest {
             }
         });
 
-        Assert.assertTrue(latch.await(RestServiceMockUtils.CONNECTION_TIMEOUT_SHORT, TimeUnit.SECONDS));
+        Assert.assertTrue(latch.await(CONNECTION_TIMEOUT_SHORT, TimeUnit.SECONDS));
     }
 
     @Test
@@ -113,6 +113,6 @@ public class FhirInterfaceTest extends DSTU2BaseTest {
             }
         });
 
-        Assert.assertTrue(latch.await(RestServiceMockUtils.CONNECTION_TIMEOUT_SHORT, TimeUnit.SECONDS));
+        Assert.assertTrue(latch.await(CONNECTION_TIMEOUT_SHORT, TimeUnit.SECONDS));
     }
 }

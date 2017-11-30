@@ -1,0 +1,183 @@
+{
+  "resourceType": "Bundle",
+  "id": "329ff764-2bfb-477d-9fef-99ce374dd645",
+  "meta": {
+    "lastUpdated": "2017-11-30T15:13:29.495-05:00"
+  },
+  "type": "searchset",
+  "total": 27851,
+  "link": [
+    {
+      "relation": "self",
+      "url": "http://fhirtest.uhn.ca/baseDstu2/Observation?_count=5&_pretty=true"
+    },
+    {
+      "relation": "next",
+      "url": "http://fhirtest.uhn.ca/baseDstu2?_getpages=329ff764-2bfb-477d-9fef-99ce374dd645&_getpagesoffset=5&_count=5&_pretty=true&_bundletype=searchset"
+    }
+  ],
+  "entry": [
+    {
+      "fullUrl": "http://fhirtest.uhn.ca/baseDstu2/Observation/2298",
+      "resource": {
+        "resourceType": "Observation",
+        "id": "2298",
+        "meta": {
+          "versionId": "2",
+          "lastUpdated": "2017-02-10T13:57:48.341-05:00"
+        },
+        "status": "final",
+        "code": {
+          "coding": [
+            {
+              "system": "http://loinc.org",
+              "code": "8302-2",
+              "display": "Body Height 2"
+            }
+          ]
+        },
+        "subject": {
+          "reference": "Patient/2228"
+        },
+        "encounter": {
+          "reference": "Encounter/2296"
+        },
+        "effectiveDateTime": "2014-11-18T01:05:11-05:00",
+        "valueQuantity": {
+          "value": 160.56783665610763,
+          "unit": "cm",
+          "system": "http://unitsofmeasure.org/",
+          "code": "cm"
+        }
+      },
+      "search": {
+        "mode": "match"
+      }
+    },
+    {
+      "fullUrl": "http://fhirtest.uhn.ca/baseDstu2/Observation/2301",
+      "resource": {
+        "resourceType": "Observation",
+        "id": "2301",
+        "meta": {
+          "versionId": "2",
+          "lastUpdated": "2017-03-02T01:55:09.505-05:00"
+        },
+        "status": "final",
+        "code": {
+          "coding": [
+            {
+              "system": "http://loinc.org",
+              "code": "4548-4",
+              "display": "Hemoglobin A1c/Hemoglobin.total in Blood"
+            }
+          ]
+        },
+        "subject": {
+          "reference": "Patient/2228"
+        },
+        "encounter": {
+          "reference": "Encounter/2296"
+        },
+        "effectiveDateTime": "2014-11-18T01:05:11-05:00",
+        "valueQuantity": {
+          "value": 5.787684782524093,
+          "unit": "%",
+          "system": "http://unitsofmeasure.org/",
+          "code": "%"
+        }
+      },
+      "search": {
+        "mode": "match"
+      }
+    },
+    {
+      "fullUrl": "http://fhirtest.uhn.ca/baseDstu2/Observation/2305",
+      "resource": {
+        "resourceType": "Observation",
+        "id": "2305",
+        "meta": {
+          "versionId": "4",
+          "lastUpdated": "2017-09-27T00:23:06.945-04:00"
+        },
+        "valueQuantity": {
+          "value": 1.5
+        }
+      },
+      "search": {
+        "mode": "match"
+      }
+    },
+    {
+      "fullUrl": "http://fhirtest.uhn.ca/baseDstu2/Observation/2304",
+      "resource": {
+        "resourceType": "Observation",
+        "id": "2304",
+        "meta": {
+          "versionId": "4",
+          "lastUpdated": "2017-09-29T02:24:12.195-04:00"
+        },
+        "status": "final",
+        "code": {
+          "coding": [
+            {
+              "system": "http://loinc.org",
+              "code": "38483-4",
+              "display": "Creatinine"
+            }
+          ]
+        },
+        "subject": {
+          "reference": "Patient/2228"
+        },
+        "encounter": {
+          "reference": "Encounter/2296"
+        },
+        "effectiveDateTime": "2014-11-18T01:05:11-05:00",
+        "valueQuantity": {
+          "value": 1.67,
+          "unit": "mg/dL",
+          "system": "http://unitsofmeasure.org/",
+          "code": "mg/dL"
+        }
+      },
+      "search": {
+        "mode": "match"
+      }
+    },
+    {
+      "fullUrl": "http://fhirtest.uhn.ca/baseDstu2/Observation/2303",
+      "resource": {
+        "resourceType": "Observation",
+        "id": "2303",
+        "meta": {
+          "versionId": "2",
+          "lastUpdated": "2017-09-30T00:41:08.644-04:00"
+        },
+        "status": "final",
+        "code": {
+          "coding": [
+            {
+              "system": "http://loinc.org",
+              "code": "6299-2",
+              "display": "Urea Nitrogen"
+            }
+          ]
+        },
+        "subject": {
+          "reference": "Patient/2228"
+        },
+        "encounter": {
+          "reference": "Encounter/2296"
+        },
+        "effectiveDateTime": "2014-11-18T01:05:11-05:00",
+        "valueQuantity": {
+          "value": 1.2
+        }
+      },
+      "search": {
+        "mode": "match"
+      }
+    }
+  ]
+}

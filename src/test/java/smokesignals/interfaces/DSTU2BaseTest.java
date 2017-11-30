@@ -35,6 +35,10 @@ import java.util.concurrent.TimeUnit;
  */
 public abstract class DSTU2BaseTest {
 
+    public static long CONNECTION_TIMEOUT_SHORT = 2;
+    public static long CONNECTION_TIMEOUT_MED = 5;
+    public static long CONNECTION_TIMEOUT_LONG = 10;
+
     private final String FHIRTEST_URL = "http://fhirtest.uhn.ca/baseDstu3/";
     private boolean mLiveTest = false;
 
@@ -57,13 +61,16 @@ public abstract class DSTU2BaseTest {
         String derivedUrl;
         if (mLiveTest) {
             derivedUrl = FHIRTEST_URL;
+            CONNECTION_TIMEOUT_SHORT = 10;
+            CONNECTION_TIMEOUT_MED = 20;
+            CONNECTION_TIMEOUT_LONG = 30;
         } else {
             derivedUrl = startMockServer();
         }
 
         mOkHttpClient = new OkHttpClient.Builder()
-                .readTimeout(RestServiceMockUtils.CONNECTION_TIMEOUT_SHORT, TimeUnit.SECONDS)
-                .connectTimeout(RestServiceMockUtils.CONNECTION_TIMEOUT_SHORT, TimeUnit.SECONDS)
+                .readTimeout(CONNECTION_TIMEOUT_SHORT, TimeUnit.SECONDS)
+                .connectTimeout(CONNECTION_TIMEOUT_SHORT, TimeUnit.SECONDS)
                 .build();
 
         mRetrofit = new Retrofit.Builder()
@@ -103,6 +110,16 @@ public abstract class DSTU2BaseTest {
         mServer.setDispatcher(dispatcher);
 
         return mServer.url("").toString();
+    }
+
+    /**
+     * Returns the parsed JSON string read from the file indicated.
+     *
+     * @param fileName Name of the file to load JSON String from.
+     * @return {@link String} read from file.
+     */
+    public String getJsonString(String fileName) {
+        return RestServiceMockUtils.getStringFromFile(this.getClass().getClassLoader(), fileName);
     }
 
     /**

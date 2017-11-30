@@ -9,12 +9,6 @@ import java.io.InputStreamReader;
  */
 public class RestServiceMockUtils {
 
-    public static final long CONNECTION_TIMEOUT_SHORT = 2;
-    public static final long CONNECTION_TIMEOUT_MED = 5;
-    public static final long CONNECTION_TIMEOUT_LONG = 10;
-
-    public static final String HEADER_AUTHORIZATION = "Authorization";
-
     public static String convertStreamToString(InputStream is) throws Exception {
         BufferedReader reader = new BufferedReader(new InputStreamReader(is));
         StringBuilder sb = new StringBuilder();
