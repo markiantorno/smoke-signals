@@ -13,7 +13,8 @@ import org.unitils.reflectionassert.ReflectionAssert;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
-import smokesignals.utils.FhirQuery;
+import smokesignals.utils.query.FhirQuery;
+import smokesignals.utils.query.Query;
 
 import java.net.HttpURLConnection;
 import java.util.concurrent.CountDownLatch;
@@ -113,7 +114,7 @@ public class FhirSearchTest extends DSTU2BaseTest {
         final int numberRequestedResults = 2;
 
         FhirQuery fhirQuery = new FhirQuery.FhirQueryBuilder()
-                .count(numberRequestedResults)
+                .where(Query.count(numberRequestedResults))
                 .build();
 
         Call<Bundle> call = mFhirInterface.search(ENDPOINT_OBSERVATION, fhirQuery);

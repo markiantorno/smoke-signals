@@ -1,12 +1,13 @@
-package smokesignals.utils.parameters;
+package smokesignals.utils.query.encodedparams;
 
 /**
  * For the ordered parameter types of number, date, and quantity, a prefix to the parameter value may be used to control
  * the nature of the matching. To avoid URL escaping and visual confusion, the following prefixes are used.
- *
+ * <p>
  * Created by mark on 2017-11-29.
  */
-public enum Prefixes {
+@SuppressWarnings("unused")
+public enum Compare {
 
     EQUAL("eq"),
     NOT_EQUAL("ne"),
@@ -20,7 +21,7 @@ public enum Prefixes {
 
     private final String mEncodedValue;
 
-    Prefixes(String encodedValue) {
+    Compare(String encodedValue) {
         mEncodedValue = encodedValue;
     }
 

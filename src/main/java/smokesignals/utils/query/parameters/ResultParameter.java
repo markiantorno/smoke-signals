@@ -1,4 +1,4 @@
-package smokesignals.utils.parameters;
+package smokesignals.utils.query.parameters;
 
 /**
  * Searching for resources is fundamental to the mechanics of FHIR. Search operations traverse through an existing set
@@ -6,7 +6,8 @@ package smokesignals.utils.parameters;
  * <p>
  * These values represent the possible search parameters for results.
  */
-public enum ResultParameter {
+@SuppressWarnings("unused")
+public enum ResultParameter implements FhirParameter {
 
     SORT("_sort"),
     COUNT("_count"),
@@ -25,8 +26,13 @@ public enum ResultParameter {
         mEncodedValue = encodedValue;
     }
 
-    public String getEncodedValue() {
+    @Override
+    public String getStringValue() {
         return mEncodedValue;
     }
 
+    @Override
+    public String toString() {
+        return mEncodedValue;
+    }
 }
