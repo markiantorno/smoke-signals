@@ -28,9 +28,13 @@ public class FhirSearchTest extends DSTU2BaseTest {
     private final String DUMMY_TOKEN_BEARER = "Bearer " + DUMMY_TOKEN;
 
     private final String ENDPOINT_OBSERVATION = "Observation";
+    private final String ENDPOINT_OBSERVATION_COUNT_TWO = "Observation?_count=2";
 
     private String mObservationBaseSearchResponseJson;
     private Bundle mObservationBaseSearchResponse;
+
+    private String mObservationCountLimitedSearchResponseJson;
+    private Bundle mObservationCountLimitedSearchResponse;
 
     @Before
     public void setUp() throws Exception {
@@ -40,6 +44,8 @@ public class FhirSearchTest extends DSTU2BaseTest {
         mObservationBaseSearchResponseJson = getJsonString("search/observation_base_search_result.json");
         mObservationBaseSearchResponse = (Bundle) mFhirJsonParser.parseResource(mObservationBaseSearchResponseJson);
 
+        mObservationCountLimitedSearchResponseJson = getJsonString("search/observation_count_limited_search_result.json");
+        mObservationCountLimitedSearchResponse = (Bundle) mFhirJsonParser.parseResource(mObservationCountLimitedSearchResponseJson);
     }
 
     @Override
@@ -53,7 +59,17 @@ public class FhirSearchTest extends DSTU2BaseTest {
                 switch (endpoint) {
                     case ENDPOINT_OBSERVATION:
                         if (methodHTTP.equals(HTTPVerbEnum.GET.name())) {
-                            return new MockResponse().setBody(mObservationBaseSearchResponseJson).setResponseCode(HttpURLConnection.HTTP_OK);
+                            return new MockResponse().setBody(mObservationBaseSearchResponseJson)
+                                    .setResponseCode(HttpURLConnection.HTTP_OK);
+                        } else {
+                            return new MockResponse().setResponseCode(HttpURLConnection.HTTP_FORBIDDEN);
+                        }
+                    case ENDPOINT_OBSERVATION_COUNT_TWO:
+                        if (methodHTTP.equals(HTTPVerbEnum.GET.name())) {
+                            return new MockResponse().setBody(mObservationCountLimitedSearchResponseJson)
+                                    .setResponseCode(HttpURLConnection.HTTP_OK);
+                        } else {
+                            return new MockResponse().setResponseCode(HttpURLConnection.HTTP_FORBIDDEN);
                         }
                     default:
                         return new MockResponse().setResponseCode(HttpURLConnection.HTTP_FORBIDDEN);
@@ -71,8 +87,45 @@ public class FhirSearchTest extends DSTU2BaseTest {
         call.enqueue(new Callback<Bundle>() {
             public void onResponse(Call<Bundle> call, Response<Bundle> response) {
                 if (response.isSuccessful()) {
-                    ReflectionAssert.assertReflectionEquals(response.body().getEntry(),
-                            mObservationBaseSearchResponse.getEntry());
+                    if (!isLiveTest()) {
+                        ReflectionAssert.assertReflectionEquals(response.body().getEntry(),
+                                mObservationBaseSearchResponse.getEntry());
+                    }
+                    latch.countDown();
+                } else {
+                    TestCase.fail("loginTest !isSuccessful : " + response.message());
+                }
+            }
+
+            public void onFailure(Call<Bundle> call, Throwable throwable) {
+                TestCase.fail("loginTest onFailure : " + throwable.getMessage());
+            }
+        });
+
+        Assert.assertTrue(latch.await(CONNECTION_TIMEOUT_SHORT, TimeUnit.SECONDS));
+    }
+
+    @Test
+    public void testLimitedObservationSearch() throws InterruptedException {
+
+        final CountDownLatch latch = new CountDownLatch(1);
+
+        final int numberRequestedResults = 2;
+
+        FhirQuery fhirQuery = new FhirQuery.FhirQueryBuilder()
+                .count(numberRequestedResults)
+                .build();
+
+        Call<Bundle> call = mFhirInterface.search(ENDPOINT_OBSERVATION, fhirQuery);
+        call.enqueue(new Callback<Bundle>() {
+            public void onResponse(Call<Bundle> call, Response<Bundle> response) {
+                if (response.isSuccessful()) {
+                    if (isLiveTest()) {
+                        Assert.assertEquals(numberRequestedResults, response.body().getEntry().size());
+                    } else {
+                        ReflectionAssert.assertReflectionEquals(response.body().getEntry(),
+                                mObservationCountLimitedSearchResponse.getEntry());
+                    }
                     latch.countDown();
                 } else {
                     TestCase.fail("loginTest !isSuccessful : " + response.message());
@@ -87,3 +140,4 @@ public class FhirSearchTest extends DSTU2BaseTest {
         Assert.assertTrue(latch.await(CONNECTION_TIMEOUT_SHORT, TimeUnit.SECONDS));
     }
 }
+

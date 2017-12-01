@@ -131,4 +131,12 @@ public abstract class DSTU2BaseTest {
     public void testWithLiveServer(boolean pointToLiveServer) {
         mLiveTest = pointToLiveServer;
     }
+
+    /**
+     * Returns true if this test is being run against the live fhirtest.uhn.ca server.
+     * @return {@link Boolean#TRUE} if pointing to the live server.
+     */
+    public boolean isLiveTest() {
+        return mLiveTest;
+    }
 }

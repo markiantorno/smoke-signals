@@ -83,8 +83,12 @@ public class FhirQuery extends HashMap<String, String> {
             return this;
         }
 
-        public FhirQueryBuilder count(String count) {
-            updateFieldValue(COUNT.getEncodedValue(), count);
+        public FhirQueryBuilder count(int count) {
+            if (count > 0) {
+                updateFieldValue(COUNT.getEncodedValue(), String.valueOf(count));
+            } else {
+
+            }
             return this;
         }
 
